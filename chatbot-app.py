@@ -57,7 +57,6 @@ def get_ai_response(query, model, context=None, chat_history=None):
         response = chat_completion.choices[0].message.content + "\n"
         response = response.split("</think>\n\n", 1)[1]
 
-
     return response
 
 
@@ -127,6 +126,7 @@ def main():
     model_choice = st.radio(
         "Choose a model:",
         ("Llama 3.3", "DeepSeek"),
+        horizontal=True,
         index=0  # Default selection
     )
 
@@ -142,7 +142,7 @@ def main():
     # Chat input
     input_query = st.chat_input("Ask me anything!")
 
-    # Retrieve answer using Llama 3.3
+    # Retrieve answer using the selected AI model
     if input_query:
         with st.spinner('Thinking...'):
             if pdf_file is not None:
@@ -164,8 +164,8 @@ def main():
             with st.chat_message("assistant"):
                 st.write(f"**Assistant:** {response}")
 
+    # Start a new chat and clear history
     if st.session_state.chat_history:
-        # Start a new chat and clear history
         if st.button("New chat", icon="💬"):
             st.session_state.chat_history = []
             st.rerun()
