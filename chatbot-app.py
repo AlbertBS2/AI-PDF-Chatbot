@@ -5,7 +5,6 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 import streamlit as st
-from io import BytesIO
 
 
 ############################ VARIABLES ############################
@@ -60,14 +59,15 @@ def get_ai_response(query, model, context=None, chat_history=None):
     return response
 
 
-def get_pdf_text(pdf_doc):
+def get_pdf_text(pdf_docs):
     """
     Extract raw text from PDFs.
     """
     raw_text = ""
-    pdf_reader = PdfReader(pdf_doc)
-    for page in pdf_reader.pages:
-        raw_text += page.extract_text()
+    for pdf_doc in pdf_docs:
+        pdf_reader = PdfReader(pdf_doc)
+        for page in pdf_reader.pages:
+            raw_text += page.extract_text()
     return raw_text
 
 
@@ -111,16 +111,34 @@ def main():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    if "pdf_files" not in st.session_state:
+        st.session_state.pdf_files = None
+
+    if "raw_text" not in st.session_state:
+        st.session_state.raw_text = None
+
+    if "text_chunks" not in st.session_state:
+        st.session_state.text_chunks = None
+
+    if "vector_store" not in st.session_state:
+        st.session_state.vector_store = None
+
+    if "file_uploader_key" not in st.session_state:
+        st.session_state.file_uploader_key = 0
+
     # Expandable PDF file uploader
-    with st.expander("📄 Attach pdf file"):
-        pdf_file = st.file_uploader('Upload your PDF file', type=['pdf'], accept_multiple_files=False)
+    with st.expander("Attach pdf file", icon="📄"):
+        st.session_state.pdf_files = st.file_uploader('Upload your PDF files',
+                                                      type=['pdf'],
+                                                      accept_multiple_files=True,
+                                                      key=f"file_uploader_{st.session_state.file_uploader_key}")
 
     # Index PDF content
-    with st.spinner('Indexing PDF content...'):
-        if pdf_file is not None:
-            raw_text = get_pdf_text(pdf_file)
-            text_chunks = get_text_chunks(raw_text)
-            vector_store = create_vector_store(text_chunks)
+    if st.session_state.pdf_files and st.session_state.vector_store is None:
+        with st.spinner('Indexing PDF content...'):
+            st.session_state.raw_text = get_pdf_text(st.session_state.pdf_files)
+            st.session_state.text_chunks = get_text_chunks(st.session_state.raw_text)
+            st.session_state.vector_store = create_vector_store(st.session_state.text_chunks)
 
     # Model selection using a radio button
     model_choice = st.radio(
@@ -131,13 +149,14 @@ def main():
     )
 
     # Display chat history as a conversation
-    for i, msg in enumerate(st.session_state.chat_history):
-        if i % 2 == 0:
-            with st.chat_message('User'):
-                st.write(f"**You**: {msg}")
-        else:
-            with st.chat_message('Assistant'):
-                st.write(f"**Assistant**: {msg}")
+    if st.session_state.chat_history:
+        for i, msg in enumerate(st.session_state.chat_history):
+            if i % 2 == 0:
+                with st.chat_message('User'):
+                    st.write(f"**You**: {msg}")
+            else:
+                with st.chat_message('Assistant'):
+                    st.write(f"**Assistant**: {msg}")
 
     # Chat input
     input_query = st.chat_input("Ask me anything!")
@@ -145,14 +164,14 @@ def main():
     # Retrieve answer using the selected AI model
     if input_query:
         with st.spinner('Thinking...'):
-            if pdf_file is not None:
+            if st.session_state.pdf_files:
                 # Retrieve relevant context
-                context = find_relevant_chunks(input_query, vector_store)
+                context = find_relevant_chunks(input_query, st.session_state.vector_store)
             else:
                 context = None
 
             # Get AI response
-            response = get_ai_response(input_query, model_choice,context, st.session_state.chat_history)
+            response = get_ai_response(input_query, model_choice, context, st.session_state.chat_history)
 
             # Update chat history
             st.session_state.chat_history.append(input_query)
@@ -163,11 +182,19 @@ def main():
                 st.write(f"**You:** {input_query}")
             with st.chat_message("assistant"):
                 st.write(f"**Assistant:** {response}")
+            
+            st.write(st.session_state.chat_history)
+            st.write(context)
 
     # Start a new chat and clear history
     if st.session_state.chat_history:
         if st.button("New chat", icon="💬"):
             st.session_state.chat_history = []
+            st.session_state.pdf_files = None
+            st.session_state.raw_text = None
+            st.session_state.text_chunks = None
+            st.session_state.vector_store = None
+            st.session_state.file_uploader_key += 1
             st.rerun()
 
 
