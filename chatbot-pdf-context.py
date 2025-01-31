@@ -45,6 +45,7 @@ def get_ai_response(query, context=None, chat_history=None):
     )
 
     response = chat_completion.choices[0].message.content + "\n"
+    response = response.split("</think>", 1)[1] # When using DeepSeek
     return response
 
 
