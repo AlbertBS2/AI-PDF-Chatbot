@@ -194,8 +194,6 @@ def main():
                 st.write(f"**You:** {input_query}")
             with st.chat_message("assistant"):
                 st.write(f"**Assistant:** {response}")
-            
-            st.write(st.session_state.chat_history)
 
     # Start a new chat and clear history
     if st.session_state.chat_history:
@@ -207,7 +205,6 @@ def main():
             st.session_state.vector_store = None
             st.session_state.file_uploader_key += 1
             st.rerun()
-
 
 if __name__ == '__main__':
     main()
