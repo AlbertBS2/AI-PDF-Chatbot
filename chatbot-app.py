@@ -182,6 +182,10 @@ def main():
             else:
                 context = None
 
+            # Display user input
+            with st.chat_message("user"):
+                st.write(f"**You:** {input_query}")
+
             # Get AI response
             response = get_ai_response(input_query, model_choice, context, st.session_state.chat_history)
 
@@ -189,9 +193,7 @@ def main():
             st.session_state.chat_history.append(input_query)
             st.session_state.chat_history.append(response)
 
-            # Display the new messages
-            with st.chat_message("user"):
-                st.write(f"**You:** {input_query}")
+            # Display the answer
             with st.chat_message("assistant"):
                 st.write(f"**Assistant:** {response}")
 
