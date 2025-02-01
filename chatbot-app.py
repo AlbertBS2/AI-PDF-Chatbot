@@ -123,22 +123,34 @@ def main():
     if "vector_store" not in st.session_state:
         st.session_state.vector_store = None
 
+    if "uploaded_files" not in st.session_state:
+        st.session_state.uploaded_files = None
+
     if "file_uploader_key" not in st.session_state:
         st.session_state.file_uploader_key = 0
 
     # Expandable PDF file uploader
     with st.expander("Attach pdf file", icon="📄"):
-        st.session_state.pdf_files = st.file_uploader('Upload your PDF files',
-                                                      type=['pdf'],
-                                                      accept_multiple_files=True,
-                                                      key=f"file_uploader_{st.session_state.file_uploader_key}")
+        st.session_state.uploaded_files = st.file_uploader(
+             'Upload your PDF files',
+             type=['pdf'],
+             accept_multiple_files=True,
+             key=f"file_uploader_{st.session_state.file_uploader_key}"
+        )
 
     # Index PDF content
-    if st.session_state.pdf_files and st.session_state.vector_store is None:
-        with st.spinner('Indexing PDF content...'):
-            st.session_state.raw_text = get_pdf_text(st.session_state.pdf_files)
-            st.session_state.text_chunks = get_text_chunks(st.session_state.raw_text)
-            st.session_state.vector_store = create_vector_store(st.session_state.text_chunks)
+    if st.session_state.uploaded_files:
+        if st.session_state.uploaded_files != st.session_state.pdf_files:
+            with st.spinner('Indexing PDF content...'):
+                st.session_state.pdf_files = st.session_state.uploaded_files
+                st.session_state.raw_text = get_pdf_text(st.session_state.pdf_files)
+                st.session_state.text_chunks = get_text_chunks(st.session_state.raw_text)
+                st.session_state.vector_store = create_vector_store(st.session_state.text_chunks)
+    else:
+        st.session_state.pdf_files = None
+        st.session_state.raw_text = None
+        st.session_state.text_chunks = None
+        st.session_state.vector_store = None
 
     # Model selection using a radio button
     model_choice = st.radio(
@@ -184,7 +196,6 @@ def main():
                 st.write(f"**Assistant:** {response}")
             
             st.write(st.session_state.chat_history)
-            st.write(context)
 
     # Start a new chat and clear history
     if st.session_state.chat_history:
