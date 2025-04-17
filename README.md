@@ -2,6 +2,9 @@
 
 An interactive AI chatbot that allows users to upload PDF files and ask questions about their contents using powerful large language models (LLMs). This project leverages **LangChain**, **FAISS**, and **Hugging Face Embeddings** to extract, chunk, and vectorize document content for semantic search and contextual chat.
 
+#
+![GIF](demo.gif)
+
 ## 🔍 Features
 
 - 📄 **PDF Uploading**: Upload one or more PDF files for document-based Q&A.
